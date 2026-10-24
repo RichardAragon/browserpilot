@@ -1,0 +1,39 @@
+# Local Python environments and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local application state, credentials, browser sessions and evidence
+.env
+.env.*
+!.env.example
+*.sqlite*
+*.db
+*.log
+auth.json
+profiles/
+runs/
+setup/
+memory/
+worker-logs/
+model-work/
+assistant/
+artifacts/
+data/
+address.txt
+last-browser-error.txt
+
+# Generated builds and archives belong in Releases
+build-work/
+build/
+dist/
+release/
+*.spec
+*.zip
+*.exe
+preview*.png
+
+# Previous validation snapshot; the current version is tracked explicitly
+VALIDATION.json

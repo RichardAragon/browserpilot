@@ -1,0 +1,231 @@
+{
+  "version": "1.1.0-preview",
+  "date": "2026-10-24",
+  "automated_tests": {
+    "passed": 103,
+    "failed": 0,
+    "seconds": 7.93
+  },
+  "live_model": "Codex gpt-6.1-sol, tool-disabled structured planner",
+  "execution": "All new live CRM tests used website connections with BROWSERPILOT_GENERIC_ONLY=1. No platform-specific adapter was allowed. Agent changes were made through rendered browser controls.",
+  "runs": [
+    {
+      "operation_id": "22c01acb52004188b796753fda75e4b8",
+      "platform": "Dolibarr",
+      "scenario": "Create BrowserPilot Generic Doli ORION",
+      "status": "confirmed",
+      "reason": "Fresh exact-name search and record form confirm the requested values; no creation replayed",
+      "attempt": 5,
+      "last_attempt_seconds": 56.171,
+      "last_attempt_model_calls": 4,
+      "used_notes": false,
+      "attempt_model_metrics": [
+        {
+          "attempt": "1",
+          "model_calls": 2,
+          "model_seconds": 13.001
+        },
+        {
+          "attempt": "2",
+          "model_calls": 6,
+          "model_seconds": 31.562
+        },
+        {
+          "attempt": "3",
+          "model_calls": 8,
+          "model_seconds": 33.564
+        },
+        {
+          "attempt": "4",
+          "model_calls": 2,
+          "model_seconds": 8.656
+        },
+        {
+          "attempt": "5",
+          "model_calls": 4,
+          "model_seconds": 20.719
+        }
+      ],
+      "journal_events": {
+        "commit_intent": 1,
+        "confirmed": 1,
+        "create_clicked": 1,
+        "open_form_intent": 1,
+        "opening_form": 1,
+        "uncertain": 2
+      }
+    },
+    {
+      "operation_id": "b6c69d5f245840c383c0cb4e57307cc7",
+      "platform": "Odoo",
+      "scenario": "Create BrowserPilot Generic Odoo ORION",
+      "status": "uncertain",
+      "reason": "Creation requires an observed blank record-name field",
+      "attempt": 2,
+      "last_attempt_seconds": 28.14,
+      "last_attempt_model_calls": 5,
+      "used_notes": false,
+      "attempt_model_metrics": [
+        {
+          "attempt": "1",
+          "model_calls": 6,
+          "model_seconds": 43.469
+        },
+        {
+          "attempt": "2",
+          "model_calls": 5,
+          "model_seconds": 22.563
+        }
+      ],
+      "journal_events": {
+        "open_form_intent": 1,
+        "opening_form": 1,
+        "uncertain": 1
+      }
+    },
+    {
+      "operation_id": "4488d84bb2c94e34b0dc227979a790d0",
+      "platform": "Odoo",
+      "scenario": "Create BrowserPilot Generic Odoo VEGA",
+      "status": "uncertain",
+      "reason": "Earlier creation outcome is absent or unconfirmed. No creation was replayed.",
+      "attempt": 2,
+      "last_attempt_seconds": 20.047,
+      "last_attempt_model_calls": 3,
+      "used_notes": true,
+      "attempt_model_metrics": [
+        {
+          "attempt": "1",
+          "model_calls": 7,
+          "model_seconds": 35.686
+        },
+        {
+          "attempt": "2",
+          "model_calls": 3,
+          "model_seconds": 14.766
+        }
+      ],
+      "journal_events": {
+        "open_form_intent": 1,
+        "opening_form": 1,
+        "uncertain": 2
+      }
+    },
+    {
+      "operation_id": "43f239befae94b85b35b6c6d19a2b0b7",
+      "platform": "Odoo",
+      "scenario": "Create BrowserPilot Generic Odoo SIRIUS",
+      "status": "confirmed",
+      "reason": "Fresh exact-name search and record form confirm the requested values; no creation replayed",
+      "attempt": 3,
+      "last_attempt_seconds": 37.14,
+      "last_attempt_model_calls": 6,
+      "used_notes": true,
+      "attempt_model_metrics": [
+        {
+          "attempt": "1",
+          "model_calls": 5,
+          "model_seconds": 24.048
+        },
+        {
+          "attempt": "2",
+          "model_calls": 7,
+          "model_seconds": 30.5
+        },
+        {
+          "attempt": "3",
+          "model_calls": 6,
+          "model_seconds": 28.374
+        }
+      ],
+      "journal_events": {
+        "commit_intent": 1,
+        "confirmed": 2,
+        "create_clicked": 1,
+        "open_form_intent": 1,
+        "opening_form": 1
+      }
+    },
+    {
+      "operation_id": "c38d95763e3449ee8289ec45d6fa0a97",
+      "platform": "Dolibarr",
+      "scenario": "Create BrowserPilot Generic Doli ORION",
+      "status": "duplicate_detected",
+      "reason": "An exact record already exists. Creation was not submitted.",
+      "attempt": 2,
+      "last_attempt_seconds": 16.969,
+      "last_attempt_model_calls": 1,
+      "used_notes": true,
+      "attempt_model_metrics": [
+        {
+          "attempt": "1",
+          "model_calls": 1,
+          "model_seconds": 5.313
+        },
+        {
+          "attempt": "2",
+          "model_calls": 1,
+          "model_seconds": 4.312
+        }
+      ],
+      "journal_events": {}
+    },
+    {
+      "operation_id": "418a04d2c42e430a93b719bb7d74bee4",
+      "platform": "Odoo",
+      "scenario": "Create BrowserPilot Generic Odoo SIRIUS",
+      "status": "duplicate_detected",
+      "reason": "An exact record already exists. Creation was not submitted.",
+      "attempt": 1,
+      "last_attempt_seconds": null,
+      "last_attempt_model_calls": null,
+      "used_notes": true,
+      "attempt_model_metrics": [
+        {
+          "attempt": "1",
+          "model_calls": 3,
+          "model_seconds": 12.438
+        }
+      ],
+      "journal_events": {}
+    }
+  ],
+  "memory": [
+    {
+      "platform": "Dolibarr",
+      "revision": 3,
+      "status": "ready",
+      "notes": 5,
+      "user_guidance_preserved": false
+    },
+    {
+      "platform": "Odoo",
+      "revision": 4,
+      "status": "ready",
+      "notes": 7,
+      "user_guidance_preserved": true
+    }
+  ],
+  "additional_measurements": {
+    "odoo_sirius_preparation_seconds": 29.453,
+    "odoo_sirius_approved_execution_seconds": 44.578,
+    "odoo_sirius_approved_execution_calls": 7
+  },
+  "notes_validation": [
+    "Real LLM wrote distinct Dolibarr and Odoo notes from setup and run evidence.",
+    "Observed and tentative notes retained source references.",
+    "User guidance saved in UI and survived automatic model consolidation.",
+    "Notes persisted from source runtime to packaged executable after restart.",
+    "Planner activity recorded the memory revision used during duplicate checks and recovery.",
+    "Unit tests cover stale-revision conflicts, unknown provenance rejection, interruption, isolation, and known record-value filtering."
+  ],
+  "limitations": [
+    "Two early Odoo form-discovery attempts remain uncertain; their durable opening intents were preserved. VEGA retry searched only and refused to reopen New.",
+    "Dolibarr creation required corrections for search timeout and field-key mapping; it was confirmed through recovery with exactly one create-click event.",
+    "Notes are advisory model output, may be wrong, and do not replace current UI evidence or guards. Filtering is not a complete anonymization guarantee.",
+    "This is a small synthetic test set, not evidence of API-level reliability, speed or improved performance caused by memory.",
+    "UI-only duplicate checks are visibility-limited and cannot enforce server uniqueness or atomic concurrent-edit isolation.",
+    "HubSpot and Salesforce were not live tested. Social workflows and actual OpenAI API transport were not revalidated this turn."
+  ],
+  "package_privacy": "Archives exclude app databases, credentials, profiles, live account logs and raw CRM screenshots."
+}
