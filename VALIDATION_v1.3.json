@@ -1,0 +1,49 @@
+{
+  "version": "1.3.0-preview",
+  "date": "2026-10-24",
+  "automated_tests": 158,
+  "live_platform": "local Odoo",
+  "live_model": "gpt-6.1-sol",
+  "adapter_used": false,
+  "record_type": "Opportunity",
+  "status": "confirmed",
+  "proof": {
+    "Name": "YouTube Test Opportunity",
+    "Suggested: Contact?": "Synthetic financial_graph_random_development_001:42"
+  },
+  "form_openings": 1,
+  "submission_intents": 1,
+  "create_actions": 1,
+  "final_attempt_seconds": 57.656,
+  "scope": "Iterative real-model test of the original user task, including fixes between retries. Final-attempt timing is not end-to-end benchmark latency.",
+  "changes": [
+    "Recognize filter removal from rendered search-region context",
+    "Recheck search context before acting; return rejected navigation to the planner",
+    "Discover options in explicitly linked or unique adjacent accessible menus",
+    "Preserve expanded dropdowns instead of toggling them closed",
+    "Resolve submission by reviewed button text and attributes",
+    "Resume unfinished input only in the original live approved form, with before/after drift checks and no prior final submission",
+    "Journal final submission intent separately; lost forms and uncertain submissions remain inspection-only",
+    "Batch visible control observation while retaining node handles; reuse the observed object workspace"
+  ],
+  "manual_browser_checks": [
+    "Filter removal versus record removal and changed-context rejection",
+    "Linked and adjacent dropdown ownership, including ambiguous menu rejection"
+  ],
+  "limits": [
+    "Browser-only creation and update remain a preview, not universal compatibility.",
+    "This does not add deletion, bulk operations, permission changes or arbitrary workflow execution.",
+    "Approval scopes the requested record and fields; it does not authorize unrelated actions.",
+    "Browser checks cannot provide server-side uniqueness or atomic isolation."
+  ],
+  "packaged_restart_check": {
+    "status": "confirmed",
+    "seconds": 37.485,
+    "create_actions": 1,
+    "submission_intents": 1,
+    "proof": {
+      "Name": "YouTube Test Opportunity",
+      "Suggested: Contact?": "Synthetic financial_graph_random_development_001:42"
+    }
+  }
+}

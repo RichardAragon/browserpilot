@@ -29,6 +29,16 @@ def search_absent(observation,name,quote,submitted):
     # Query must still be visible in a real search field or the rendered filter chip.
     return name in observation['aria'] or any(c.get('value')==name and re.search(r'search|filter|find',c.get('label','')+' '+c.get('name',''),re.I) for c in observation['controls'])
 
+class FormInputPaused(ValueError):pass
+
+
+def resumable_input(saved,live,prepared,approved,events):
+    if not approved or not prepared or not live or live.is_closed() or live.url!=prepared['url']:return False
+    if any(e['event'] in ('submit_intent','create_clicked','draft_reference_saved') for e in events):return False
+    if saved['phase'] in ('input_paused','editing','uncertain') and saved.get('save_unattempted'):return True
+    return False
+
+
 class GenericCreation(DraftCreation):
     def verify_document(self,ui,p,prepared,client,run,stop):
         cat=ControlCatalog(ui);history=[]
@@ -136,7 +146,9 @@ class GenericCreation(DraftCreation):
                 if kind=='search':filled=True
                 else:submitted=filled
             else:
-                navigation(c,ui.page.url)
+                try:navigation(c,ui.page.url)
+                except ValueError as exc:
+                    history.append({'rejected':str(exc),'target':c.get('label') or c.get('text')});continue
                 text=' '.join(c.get(k,'') for k in ('text','label','name'))
                 try:cat.act({'kind':'click','target_id':c['id'],'value':''})
                 except Exception as exc:
@@ -211,7 +223,7 @@ class GenericCreation(DraftCreation):
         raise ValueError('Could not discover a blank creation form')
 
     def create(self,run,stop):
-        from .website import fingerprint,resolve,save_control,value_of
+        from .website import fingerprint,resolve,resolve_action,save_control,value_of
         p=run['payload'];ident=run['id'];c=self.store.connection(run['connection_id']);result=dict(run['result'])
         j=Journal(self.store.root/'operations.sqlite');j.ensure(p)
         out=self.store.root/'runs'/ident/str(run['attempt']);client=StructuredModel(self.store,out/'planner');start=time.monotonic()
@@ -223,11 +235,13 @@ class GenericCreation(DraftCreation):
                 prepared=result.get('prepared');saved=j.load(ident)
                 approved=bool(prepared) and result.get('approval')==digest(prepared)
                 live=self.drafts.get(ident)
-                # Lost sessions or any prior field-edit intent are inspection only.
-                recovery=saved.get('submission_pending') and (not live or live.is_closed() or saved['phase'] not in ('form_open','draft_open')) or saved['phase']=='confirmed'
+                resume_input=resumable_input(saved,live,prepared,approved,j.events(ident))
+                # Lost sessions and uncertain final submissions remain inspect-only.
+                recovery=not resume_input and (saved.get('submission_pending') and (not live or live.is_closed() or saved['phase'] not in ('form_open','draft_open')) or saved['phase']=='confirmed')
                 search_page=context.new_page();proof_page=search_page
                 pointer=saved.get('draft_pointer')
-                search_page.goto(pointer['url'] if pointer else c['config'].get('workspace_url',c['config'].get('start_url',p['origin'])),wait_until='domcontentloaded')
+                workspace=result.get('search',{}).get('url') or c['config'].get('workspace_url',c['config'].get('start_url',p['origin']))
+                search_page.goto(pointer['url'] if pointer else workspace,wait_until='domcontentloaded')
                 search_ui=self.ui(search_page,c,out)
                 if pointer and recovery:
                     if not approved or not prepared or prepared.get('stage')!='complete_draft':raise ValueError('The original draft exists but its reference was not approved; inspect that draft before continuing')
@@ -285,29 +299,32 @@ class GenericCreation(DraftCreation):
                     if v.get('readonly'):
                         if v['quote'] not in obs['aria']:raise ValueError('The reviewed customer relationship changed')
                         continue
-                    if value_of(resolve(obs,v['signature']))!=v['before']:raise ValueError('The creation form changed after review')
+                    current=value_of(resolve(obs,v['signature']))
+                    if current not in ([v['before'],v['after']] if resume_input else [v['before']]):raise ValueError('The creation form changed after review')
                 if stop.is_set():raise ValueError('Stopped before entering record values')
-                j.record(ident,'commit_intent',phase='commit_intent');result.update(send_intent=True,phase='commit_intent')
+                j.record(ident,'resume_original_form' if resume_input else 'commit_intent',phase='editing',save_unattempted=True,submission_pending=True);result.update(send_intent=True,phase='editing')
                 self.store.update_run(ident,'running','Entering the approved creation once, then verifying in a fresh tab',result)
                 for n,v in enumerate(prepared['fields'].values()):
                     if v.get('readonly') or v.get('deferred'):continue
                     obs=cat.observe(f'fill-{n:02}');target=resolve(obs,v['signature'])
+                    if resume_input and value_of(target)==v['after']:continue
                     if value_of(target)!=v['before']:raise ValueError('Creation field drifted before editing')
                     if v['before']==v['after']:continue
                     if stop.is_set():raise ValueError('Stopped after creation intent')
                     if v.get('custom_select'):
-                        cat.act({'kind':'click','target_id':target['id'],'value':''})
+                        if not target.get('expanded'):cat.act({'kind':'click','target_id':target['id'],'value':''})
                         options=cat.observe(f'choose-{n:02}')
                         matches=[x for x in options['controls'] if x.get('role')=='option' and x['text']==v['after'] and not x['disabled']]
-                        if len(matches)!=1:raise ValueError('The reviewed existing-record option is missing or ambiguous; no substitute selected')
+                        if len(matches)!=1:raise FormInputPaused('The reviewed existing-record option is missing or ambiguous; no substitute selected')
                         cat.act({'kind':'click','target_id':matches[0]['id'],'value':''})
                     else:cat.act({'kind':'select' if target['tag']=='select' else 'fill','target_id':target['id'],'value':v['after']})
                 obs=cat.observe('before-create')
                 if any(value_of(resolve(obs,v['signature']))!=v['after'] for v in prepared['fields'].values() if not v.get('readonly') and not v.get('deferred')):raise ValueError('Creation form differs from the approved values')
                 saves=[x for x in obs['controls'] if save_control(x,creating=True) and not x['disabled']]
-                save=resolve(obs,prepared['save']) if prepared['save'] else saves[0] if len(saves)==1 else None
+                save=resolve_action(obs,prepared['save'],prepared['save_text']) if prepared['save'] else saves[0] if len(saves)==1 else None
                 if not save or not save_control(save,creating=True):raise ValueError('No unique final creation action is available; no blind submission')
                 if stop.is_set():raise ValueError('Stopped before final creation submission')
+                j.record(ident,'submit_intent',phase='commit_intent',save_unattempted=False)
                 cat.act({'kind':'click','target_id':save['id'],'value':''})
                 ui.wait_for_ui_ready()
                 j.record(ident,'draft_reference_saved' if prepared.get('stage')=='complete_draft' else 'create_clicked',phase='commit_intent')
@@ -317,7 +334,7 @@ class GenericCreation(DraftCreation):
                     return self.finish(run,'awaiting_approval','The draft exists. Review its discovered reference field to complete the original task.',result)
                 # Independent list search proves persistence, not just dirty form state.
                 pointer=prepared.get('draft_pointer')
-                search_page.goto(pointer['url'] if pointer else c['config'].get('workspace_url',c['config'].get('start_url',p['origin'])),wait_until='domcontentloaded')
+                search_page.goto(pointer['url'] if pointer else found.get('url',workspace),wait_until='domcontentloaded')
                 if not pointer:
                     found=self.find_record(search_ui,{**p,'reviewed_identity_field':prepared['fields'].get('Name',{})},client,run,stop,'verify-search')
                     if not found['found']:raise ValueError('Created record was not found after submission')
@@ -336,9 +353,12 @@ class GenericCreation(DraftCreation):
                 out.mkdir(parents=True,exist_ok=True)
                 (out/'error.txt').write_text(type(exc).__name__+': '+str(exc),encoding='utf-8')
             except OSError:pass
+            failed_state=j.load(ident)
+            if isinstance(exc,FormInputPaused) or (failed_state['phase']=='editing' and failed_state.get('save_unattempted')):
+                j.record(ident,'input_paused',phase='input_paused',save_unattempted=True)
             state=j.load(ident);pending=state.get('submission_pending',False)
             live=self.drafts.get(ident)
-            resumable=state['phase'] in ('form_open','draft_open') and live and not live.is_closed()
+            resumable=state['phase'] in ('form_open','draft_open','input_paused') and live and not live.is_closed()
             if pending and not resumable:j.record(ident,'uncertain',phase='uncertain')
             result.update(phase=state['phase'] if resumable else 'uncertain' if pending else 'blocked',send_intent=pending,seconds=round(time.monotonic()-start,3),planner_calls=client.calls,adapter_used=False)
             reason=str(exc) if isinstance(exc,ValueError) else f'{type(exc).__name__}: browser creation did not finish. Inspect the connection browser.'

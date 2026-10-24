@@ -33,19 +33,30 @@ class ControlCatalog:
         elements=self.ui.page.locator('a,input,textarea,select,button,[role="button"],[role="combobox"],[role="tab"],[role="menuitem"],[role="option"],[role="radio"],[role="checkbox"],[contenteditable="true"],[tabindex]:not([tabindex="-1"])')
         # Pin actual nodes. An nth() locator would silently retarget if the DOM
         # reordered while the planner was thinking.
-        for el in elements.element_handles():
-            visible=el.is_visible()
-            if not visible:
-                child=[x for x in el.query_selector_all(':scope > *') if x.is_visible()]
-                if len(child)!=1: continue
-            info=el.evaluate('''e=>{
+        handles=elements.element_handles()
+        # Read metadata together, keeping the original node handles pinned. This
+        # avoids thousands of browser round trips on populated CRM boards.
+        infos=self.ui.page.evaluate('''elements=>elements.map(e=>{
+                const shown=x=>!!(x.getBoundingClientRect().width&&x.getBoundingClientRect().height)&&getComputedStyle(x).visibility!=='hidden';
+                if(!shown(e)&&Array.from(e.children).filter(shown).length!==1)return null;
                 const td=e.closest('td'), row=e.closest('tr');
                 const label=(e.getAttribute('aria-label')||Array.from(e.labels||[]).map(x=>x.innerText).join(' ')||e.getAttribute('placeholder')||(td&&td.previousElementSibling?td.previousElementSibling.innerText:'')||'').trim();
                 const role=e.getAttribute('role')||'';
                 const visible=x=>!!(x.getBoundingClientRect().width&&x.getBoundingClientRect().height);
-                const owned=(e.getAttribute('aria-controls')||e.getAttribute('aria-owns')||'').split(' ').map(id=>document.getElementById(id)).filter(Boolean);
+                let owned=(e.getAttribute('aria-controls')||e.getAttribute('aria-owns')||'').split(' ').map(id=>document.getElementById(id)).filter(Boolean);
+                // Some accessible comboboxes use an adjacent menu without
+                // aria-controls. Accept only a unique local menu and combobox.
+                if(role==='combobox'&&e.getAttribute('aria-expanded')==='true'&&!owned.length){
+                  for(let root=e.parentElement,depth=0;root&&depth<3;root=root.parentElement,depth++){
+                    const combos=Array.from(root.querySelectorAll('[role="combobox"]')).filter(visible);
+                    const menus=Array.from(root.querySelectorAll('[role="listbox"],[role="menu"]')).filter(x=>visible(x)&&x.querySelector('[role="option"]'));
+                    if(combos.length!==1)break;
+                    if(menus.length===1){owned=menus;break;}
+                  }
+                }
                 const customOptions=role==='combobox'&&e.getAttribute('aria-expanded')==='true'?owned.flatMap(x=>Array.from(x.querySelectorAll('[role="option"]'))).filter(visible).map(x=>x.innerText.trim()):[];
                 return {tag:e.tagName.toLowerCase(),role:role,type:e.type||'',name:e.getAttribute('name')||'',dom_id:e.id||'',heading:!!e.closest('h1,[role="heading"][aria-level="1"]'),
+                  expanded:e.getAttribute('aria-expanded')==='true',search_scope:!!e.closest('search,[role="search"]'),
                   text:(e.innerText||e.getAttribute('title')||e.getAttribute('value')||'').trim().slice(0,180),
                   label:label.slice(0,160),context:(row?row.innerText:'').trim().slice(0,260),
                   value:e.type==='password'?'[redacted]':(e.value||(e.isContentEditable||role==='combobox'?e.innerText:'')),checked:['checkbox','radio'].includes(e.type)?e.checked:null,
@@ -53,7 +64,9 @@ class ControlCatalog:
                   href:e.tagName==='A'?e.getAttribute('href'):null,
                   selected_text:e.tagName==='SELECT'&&e.selectedOptions.length?e.selectedOptions[0].text.trim():null,
                   options:e.tagName==='SELECT'?Array.from(e.options).map(o=>o.text.trim()):customOptions};
-            }''')
+            })''',handles)
+        for el,info in zip(handles,infos):
+            if info is None:continue
             if info['type'] in ('hidden','password','file'): continue
             # Long option text is redundant with options and dominates model context.
             if info['tag']=='select': info['text']=''
@@ -113,12 +126,13 @@ class ControlCatalog:
         target,info=self.targets[ident]
         current=target.evaluate('''e=>{
             const td=e.closest('td');
-            return {connected:e.isConnected,disabled:!!e.disabled||e.getAttribute('aria-disabled')==='true',
+            return {expanded:e.getAttribute('aria-expanded')==='true',search_scope:!!e.closest('search,[role="search"]'),connected:e.isConnected,disabled:!!e.disabled||e.getAttribute('aria-disabled')==='true',
               value:e.value||(e.isContentEditable?e.innerText:''),type:e.type||'',name:e.getAttribute('name')||'',
               text:(e.innerText||e.getAttribute('title')||e.getAttribute('value')||'').trim().slice(0,180),
               label:(e.getAttribute('aria-label')||Array.from(e.labels||[]).map(x=>x.innerText).join(' ')||e.getAttribute('placeholder')||(td&&td.previousElementSibling?td.previousElementSibling.innerText:'')||'').trim().slice(0,160),
               href:e.tagName==='A'?e.getAttribute('href'):null};
         }''')
+        if current.get('search_scope',False)!=info.get('search_scope',False):raise ValueError('Observed action moved outside its search context; observe again')
         if not current['connected'] or current['disabled']:raise ValueError('Observed control is detached or disabled; observe again')
         if current['type']!=info['type'] or current['name']!=info['name'] or (kind in ('fill','select','check') and current['value']!=info['value']):
             raise ValueError('Observed control changed while planning; observe again')

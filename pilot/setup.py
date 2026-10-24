@@ -8,14 +8,20 @@ LOGIN=object_schema({'username_id':STRING,'submit_id':STRING,'reason':STRING})
 SETUP=object_schema({'kind':{'type':'string','enum':['click','ready','blocked']},'target_id':STRING,'site_name':STRING,'summary':STRING,'signed_in':{'type':'boolean'},'capabilities':{'type':'array','items':STRING},'fields':{'type':'array','items':STRING}})
 
 def navigation(c,base,create=False):
-    text=' '.join(str(c.get(k) or '') for k in ('text','label','name'))
-    if re.search(r'\b(delete|remove|merge|send|post|publish|export|import|approve|confirm|validate|issue|charge|pay|purchase|subscribe|logout|sign out|sign in|log in|password|settings|setup|admin|save|submit)\b',text,re.I):
-        raise ValueError('Navigation would cross a write or account boundary')
-    if not create and re.search(r'\b(create|new|add)\b',text,re.I):raise ValueError('Creation is not authorized during this navigation step')
+    # Authorize the observed action in its UI context, not a word appearing in
+    # a filter value or record name. A search-chip Remove is not record deletion.
+    label=(c.get('label') or c.get('text') or c.get('name') or '').strip()
+    filter_change=bool(c.get('search_scope') and re.fullmatch(r'(?:remove|clear|reset)(?: (?:this |all )?(?:filter|filters|search|query))?',label,re.I))
     if c.get('href'):
         dest=urlsplit(urljoin(base,c['href']));src=urlsplit(base)
         if (dest.scheme,dest.netloc)!=(src.scheme,src.netloc):raise ValueError('Navigation leaves the connected website')
-        if re.search(r'(?:action=|/)(delete|remove|logout|send|merge)',c['href'],re.I):raise ValueError('Unsafe navigation link')
+        if re.search(r'(?:action=|/)(delete|remove|logout|send|merge)',c['href'],re.I):raise ValueError('This link performs a record or account action, not navigation')
+    if filter_change:return 'search_filter'
+    text=' '.join(str(c.get(k) or '') for k in ('text','label','name'))
+    match=re.search(r'\b(delete|remove|merge|send|post|publish|export|import|approve|confirm|validate|issue|charge|pay|purchase|subscribe|logout|sign out|sign in|log in|password|settings|setup|admin|save|submit)\b',text,re.I)
+    if match:raise ValueError(f'The selected control "{label[:80]}" is not a navigation action for this step. Choose a search or record-opening control; record changes must use the approved task mapping.')
+    if not create and re.search(r'\b(create|new|add)\b',text,re.I):raise ValueError('Open the new form only after the duplicate search, in the authorized creation step')
+    return 'open_form' if create and re.search(r'\b(create|new|add)\b',text,re.I) else 'navigate'
 
 class GenericSetup:
     def login(self,ident,page,c):

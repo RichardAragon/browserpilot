@@ -8,7 +8,7 @@ import re
 import time
 from urllib.parse import urljoin,urlsplit
 from .social import SocialBrowser
-from .setup import GenericSetup
+from .setup import GenericSetup,navigation
 from .creation import GenericCreation
 from .model import StructuredModel,object_schema,STRING
 from .store import origin
@@ -27,6 +27,11 @@ def resolve(observation,signature):
     found=[c for c in observation['controls'] if fingerprint(c)==signature]
     if len(found)!=1:raise ValueError('The reviewed field is missing or ambiguous in the current page')
     return found[0]
+def resolve_action(observation,signature,text):
+    found=[c for c in observation['controls'] if fingerprint(c)==signature and c['text']==text]
+    if len(found)!=1:raise ValueError('The reviewed submission button is missing or ambiguous; no submission attempted')
+    return found[0]
+
 def is_search(c):return bool(re.search(r'search|filter|find',c.get('label','')+' '+c.get('name',''),re.I))
 def value_of(c):return c.get('selected_text',c['value']) if c['tag']=='select' else c['value']
 
@@ -72,7 +77,7 @@ class WebsiteBrowser(GenericSetup,GenericCreation,SocialBrowser):
     def ready(self,page,observation,action,p,creating=False):
         if creating:
             identity=next((c for c in observation['controls'] if c['id']==action['identity_target_id']),None)
-            if not identity or identity['tag'] not in ('input','textarea') or identity['value'].strip() or not (identity.get('heading') or re.search(r'name|title|company|account|contact|organization|ref(?:erence)?',identity['label']+' '+identity['name']+' '+identity.get('dom_id',''),re.I)):raise ValueError('Creation requires an observed blank record-name field')
+            if not identity or identity['tag'] not in ('input','textarea') or identity['value'].strip() or not (identity.get('heading') or re.search(r'name|title|company|account|contact|organization|ref(?:erence)?',identity['label']+' '+identity['name']+' '+identity.get('dom_id',''),re.I) or (p.get('record_type') and identity['label'].strip().casefold()==p['record_type'].strip().casefold())):raise ValueError('Creation requires an observed blank record-name field')
             binding=next((b for b in action['bindings'] if b['field']=='Name'),None)
             if not binding or binding['target_id']!=identity['id']:raise ValueError('The record name must map to the blank identity field')
         else:self.identity(page,observation,action,p['name'])
@@ -130,13 +135,9 @@ class WebsiteBrowser(GenericSetup,GenericCreation,SocialBrowser):
                 if action['kind']=='press_search' and info['value']!=p['name']:raise ValueError('Search field changed before execution')
                 proposal={'kind':'fill' if action['kind']=='search' else 'press','target_id':info['id'],'value':p['name'] if action['kind']=='search' else 'Enter'}
             else:
-                if re.search(r'\b(save|create|new|delete|remove|merge|send|post|publish|export|import|approve|pay|purchase|subscribe|logout|sign out|sign in|log in|password|settings|setup|admin)\b',text,re.I):raise ValueError('Navigation would cross a write or account boundary')
-                if info.get('href'):
-                    destination=urlsplit(urljoin(ui.page.url,info['href']))
-                    if (destination.scheme,destination.netloc)!=ui.origin:raise ValueError('Navigation leaves the connected website')
-                    if re.search(r'(?:action=|/)(delete|remove|logout|send|merge)',info['href'],re.I):raise ValueError('Unsafe navigation link')
-                elif p['name'] not in info['text'] and not re.search(r'search|find|filter|edit|modify|detail|contact|compan|account|record|crm|sales|order|opportun|project|quot|proposal|customer|menu|next|previous|view|cancel|back',text,re.I) and info['tag'] not in ('select',) and info.get('type') not in ('radio',):
-                    raise ValueError('Unfamiliar navigation control needs manual opening in the browser')
+                try:navigation(info,ui.page.url)
+                except ValueError as exc:
+                    history.append({'rejected':str(exc),'target':text[:120]});continue
                 proposal={'kind':'click','target_id':info['id'],'value':''}
             catalog.act(proposal);history.append({'action':action['kind'],'target':text[:120]})
         raise ValueError('Could not establish the exact record and fields within the navigation budget')
@@ -185,7 +186,7 @@ class WebsiteBrowser(GenericSetup,GenericCreation,SocialBrowser):
                 fresh=cat.observe('before-save')
                 if any(value_of(resolve(fresh,v['signature']))!=v['after'] for v in prepared['fields'].values()):raise ValueError('The form no longer matches the reviewed patch')
                 if prepared['save']:
-                    save=resolve(fresh,prepared['save'])
+                    save=resolve_action(fresh,prepared['save'],prepared['save_text'])
                     if save['text']!=prepared['save_text'] or not save_control(save):raise ValueError('Save action changed')
                 else:
                     saves=[item for item in fresh['controls'] if save_control(item) and not item['disabled']]

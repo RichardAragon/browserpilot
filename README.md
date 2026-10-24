@@ -2,11 +2,11 @@
 
 A local Windows app that uses an LLM to discover and operate CRM interfaces through the browser. Connect a website, describe a task, review the proposed fields, and inspect the resulting evidence.
 
-**Version 1.2 is a preview.** Generic creation and duplicate prevention have been tested on local Dolibarr and Odoo instances with platform-specific adapters disabled. Salesforce and HubSpot URLs are supported as connection inputs, but their live workflows have not been validated. API-level reliability and speed have not been established.
+**Version 1.3 is a preview.** Generic creation and duplicate prevention have been tested on local Dolibarr and Odoo instances with platform-specific adapters disabled. Salesforce and HubSpot URLs are supported as connection inputs, but their live workflows have not been validated. API-level reliability and speed have not been established.
 
 ## Run the Windows app
 
-1. Download `BrowserPilot_Windows_v1.2.zip` from [Releases](https://github.com/RichardAragon/browserpilot/releases).
+1. Download `BrowserPilot_Windows_v1.3.zip` from [Releases](https://github.com/RichardAragon/browserpilot/releases).
 2. Extract the archive. Open `BrowserPilot.exe` in its `BrowserPilot` folder, keeping `_internal` beside it.
 3. In **Settings**, select your existing Codex sign-in or provide an OpenAI API key and a model that supports structured outputs.
 4. Add a website and let the assistant inspect it. Complete sign-in in the separate browser when prompted. Microsoft Edge is required for interactive sessions.
@@ -17,6 +17,7 @@ The package includes Python and the browser runtime. It is an unsigned preview b
 ## Capabilities
 
 - Generic website setup, sign-in control discovery, navigation and field mapping.
+- Context-aware search controls: removing a search filter is distinct from removing a record. Rejected navigation choices return feedback to the planner, and observed custom dropdowns support both linked and uniquely adjacent option menus.
 - Object-aware duplicate searches and reviewed creation or updates of one record. A Sales Order stays a Sales Order even when its external reference contains “Opportunity”.
 - Draft business documents and delegated existing-record choices: ask for any existing customer, then review the actual customer the planner finds. Native selects and observed custom dropdowns are supported during creation.
 - Persistent per-connection platform notes learned from setup and task outcomes. Notes include evidence references, user corrections and revision history.
@@ -69,6 +70,8 @@ The generated app is under `release/BrowserPilot/`. For isolated manual testing,
 | `build.ps1` | Windows packaging |
 
 ## Validation and data
+
+Version 1.3 passed **158 automated tests** and completed the original Odoo Opportunity task using the general browser controller. Filter removal, custom dropdowns and partial-form recovery were tested, with one form opening and one final creation. See [the 1.3 report](REPORT_v1.3.html) and [structured results](VALIDATION_v1.3.json).
 
 Version 1.2 passed **137 automated tests** and a real-model Dolibarr Sales Order test with platform-specific adapters disabled. The controller created one draft, completed its customer reference, and verified its identity, customer and Draft status in a fresh browser page. See [the 1.2 report](REPORT_v1.2.html) and [structured results](VALIDATION_v1.2.json). Draft-first creation currently covers a name/reference and delegated existing relationships; it does not add line items or validate/send/pay a document. References are not assumed to be unique document keys.
 
