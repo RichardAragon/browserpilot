@@ -58,7 +58,7 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError,IndexError):return self.reply(404,{'error':'Not found'})
     def screenshots(self,ident):
         root=self.server.store.root/'runs'/ident
-        return [p.relative_to(root).as_posix() for p in sorted(root.rglob('*.png'))][-20:] if root.exists() else []
+        return [p.relative_to(root).as_posix() for p in sorted(root.rglob('*.png'),key=lambda p:p.stat().st_mtime_ns)][-20:] if root.exists() else []
     def do_POST(self):
         if not self.valid_host() or self.headers.get('Origin')!=self.server.origin or not secrets.compare_digest(self.headers.get('X-BrowserPilot-Token',''),self.server.token):
             return self.reply(403,{'error':'Open BrowserPilot locally to continue'})

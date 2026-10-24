@@ -1,0 +1,41 @@
+{
+  "version": "1.2.0-preview",
+  "date": "2026-10-24",
+  "automated_tests": 133,
+  "live_model": "gpt-6.1-sol",
+  "platform": "local Dolibarr",
+  "mode": "generic browser controller; platform-specific adapters disabled",
+  "record_type": "Sales Order",
+  "outcome": "confirmed",
+  "document_identity": "(PROV290)",
+  "proof": {
+    "Name": "BrowserPilot staged order QA 20261024",
+    "Customer": "OrgSim Gate QA Customer",
+    "Status": "Draft"
+  },
+  "create_actions": 1,
+  "reference_saves": 1,
+  "last_verification_seconds": 12.641,
+  "last_verification_calls": 2,
+  "recovery": "Fresh browser page reopens the observed document URL and verifies the original generated identity. No creation or reference update is replayed.",
+  "limitations": [
+    "This is an iterative development test, not an API-speed or universal-compatibility benchmark.",
+    "The draft-first path currently covers a name/reference and delegated existing relationships. It does not add line items, validate, issue, send or pay.",
+    "Customer reference and External ref can be separate fields. Generated documents are tracked by their observed document identity; references are not assumed unique.",
+    "A process restart before reference review can leave a known draft needing manual completion; the controller does not create it again.",
+    "The earlier isolated YouTube test form was not submitted. Its original intent fence remains in the isolated development workspace."
+  ],
+  "packaged_restart_check": {
+    "outcome": "confirmed",
+    "seconds": 30.875,
+    "create_actions": 1,
+    "reference_saves": 1,
+    "proof": {
+      "state": {
+        "Name": "BrowserPilot staged order QA 20261024",
+        "Customer": "OrgSim Gate QA Customer",
+        "Status": "Draft"
+      }
+    }
+  }
+}

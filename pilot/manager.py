@@ -95,6 +95,14 @@ class Manager:
                         continue
                     self.active[ident]=proc
             try:
+                if general and not getattr(sys,'frozen',False) and os.environ.get('BROWSERPILOT_DEV_RELOAD')=='1':
+                    # Source-development only, between jobs on the browser's
+                    # owning thread. Keep live forms and all intent journals.
+                    import importlib
+                    from uiagent import control_catalog
+                    from . import setup,drafts,creation,website as controller
+                    for module in (control_catalog,setup,drafts,creation,controller):importlib.reload(module)
+                    website.__class__=controller.WebsiteBrowser
                 if proc:
                     proc.wait();stream.close()
                     if run and self.store.run(ident)['status'] in ('running','stopping'):

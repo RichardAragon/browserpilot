@@ -148,11 +148,15 @@ class Store:
             if any(not isinstance(k,str) or not k.strip() or len(k)>100 or not isinstance(v,str) or len(v)>1000 for k,v in fields.items()):raise ValueError('Invalid field change')
             if p in ('messenger','instagram'):raise ValueError('Use the self-messaging workflow for this connection')
             payload={'operation_id':ident,'platform':p,'kind':kind,'name':name,'desired':fields,'origin':connection['config']['base_url']}
+            record_type=str(data.get('record_type','')).strip()
+            choices=data.get('choose_existing',[])
+            if len(record_type)>100 or not isinstance(choices,list) or len(choices)>4 or any(not isinstance(x,str) or not x.strip() or len(x)>100 for x in choices):raise ValueError('Specify a record type and up to four delegated existing-record choices')
+            payload.update(record_type=record_type,choose_existing=choices,draft_only=bool(re.search(r'order|invoice|quot|proposal|contract',record_type,re.I)))
             if kind=='browser_create':
                 if any(k.casefold()=='name' and v!=name for k,v in fields.items()):raise ValueError('Name must match the record identity')
                 # The assistant may repeat identity under the visible CRM label.
                 # Canonicalize that repetition instead of mapping two fields to one node.
-                identity_label=re.compile(r'^(?:(?:third[ -]?party|company|contact|account|record|organization)\s+)?name$',re.I)
+                identity_label=re.compile(r'^(?:(?:(?:third[ -]?party|company|contact|account|record|organization)\s+)?name|title|(?:external|customer)\s+ref(?:erence)?\.?)$',re.I)
                 payload['desired']={'Name':name,**{k:v for k,v in fields.items() if not (identity_label.fullmatch(k.strip()) and v==name)}}
             title=('Create ' if kind=='browser_create' else 'Update ')+name
         elif p in ('dolibarr','odoo'):

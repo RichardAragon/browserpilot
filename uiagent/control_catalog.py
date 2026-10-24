@@ -12,8 +12,11 @@ class ControlCatalog:
         self.generation=0
 
     def observe(self,shot_name):
-        self.ui.page.wait_for_load_state('domcontentloaded')
-        self.ui.page.locator('body').wait_for(state='attached')
+        self.ui.page.wait_for_load_state('domcontentloaded',timeout=30000)
+        # A search/navigation may begin just after the previous DOM-ready check.
+        # Allow its new document to arrive; the shorter action timeout is for
+        # individual controls, not a CRM's full page response.
+        self.ui.page.locator('body').wait_for(state='attached',timeout=30000)
         # SPA navigation does not produce a load event. Wait for a short DOM quiet
         # window, bounded even when a chat/polling widget keeps updating.
         self.ui.page.evaluate('''()=>new Promise(resolve=>{
@@ -38,14 +41,18 @@ class ControlCatalog:
             info=el.evaluate('''e=>{
                 const td=e.closest('td'), row=e.closest('tr');
                 const label=(e.getAttribute('aria-label')||Array.from(e.labels||[]).map(x=>x.innerText).join(' ')||e.getAttribute('placeholder')||(td&&td.previousElementSibling?td.previousElementSibling.innerText:'')||'').trim();
-                return {tag:e.tagName.toLowerCase(),type:e.type||'',name:e.getAttribute('name')||'',dom_id:e.id||'',heading:!!e.closest('h1,[role="heading"][aria-level="1"]'),
+                const role=e.getAttribute('role')||'';
+                const visible=x=>!!(x.getBoundingClientRect().width&&x.getBoundingClientRect().height);
+                const owned=(e.getAttribute('aria-controls')||e.getAttribute('aria-owns')||'').split(' ').map(id=>document.getElementById(id)).filter(Boolean);
+                const customOptions=role==='combobox'&&e.getAttribute('aria-expanded')==='true'?owned.flatMap(x=>Array.from(x.querySelectorAll('[role="option"]'))).filter(visible).map(x=>x.innerText.trim()):[];
+                return {tag:e.tagName.toLowerCase(),role:role,type:e.type||'',name:e.getAttribute('name')||'',dom_id:e.id||'',heading:!!e.closest('h1,[role="heading"][aria-level="1"]'),
                   text:(e.innerText||e.getAttribute('title')||e.getAttribute('value')||'').trim().slice(0,180),
                   label:label.slice(0,160),context:(row?row.innerText:'').trim().slice(0,260),
-                  value:e.type==='password'?'[redacted]':(e.value||(e.isContentEditable?e.innerText:'')),checked:['checkbox','radio'].includes(e.type)?e.checked:null,
+                  value:e.type==='password'?'[redacted]':(e.value||(e.isContentEditable||role==='combobox'?e.innerText:'')),checked:['checkbox','radio'].includes(e.type)?e.checked:null,
                   disabled:!!e.disabled||e.getAttribute('aria-disabled')==='true',
                   href:e.tagName==='A'?e.getAttribute('href'):null,
                   selected_text:e.tagName==='SELECT'&&e.selectedOptions.length?e.selectedOptions[0].text.trim():null,
-                  options:e.tagName==='SELECT'?Array.from(e.options).map(o=>o.text.trim()):null};
+                  options:e.tagName==='SELECT'?Array.from(e.options).map(o=>o.text.trim()):customOptions};
             }''')
             if info['type'] in ('hidden','password','file'): continue
             # Long option text is redundant with options and dominates model context.
@@ -86,15 +93,15 @@ class ControlCatalog:
         elif kind=='fill': target.fill(value)
         elif kind=='select':
             if value not in (info.get('options') or []): raise ValueError('Option is not in observed options')
-            target.select_option(label=value)
+            target.select_option(label=value,timeout=30000)
         elif kind=='check':
             if value not in ('true','false'): raise ValueError('Checkbox requires true/false')
             target.set_checked(value=='true')
         elif kind=='press':
             if value not in ('Enter','Tab','Escape','ArrowDown','ArrowUp'): raise ValueError('Unsupported key')
-            target.press(value)
+            target.press(value,no_wait_after=True)
         else: raise ValueError('Unsupported UI action')
-        self.ui.page.wait_for_load_state('domcontentloaded')
+        self.ui.page.wait_for_load_state('domcontentloaded',timeout=30000)
         self.ui._check_origin()
 
     def _validate(self,action):

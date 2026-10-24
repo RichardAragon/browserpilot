@@ -9,7 +9,7 @@ SETUP=object_schema({'kind':{'type':'string','enum':['click','ready','blocked']}
 
 def navigation(c,base,create=False):
     text=' '.join(str(c.get(k) or '') for k in ('text','label','name'))
-    if re.search(r'\b(delete|remove|merge|send|post|publish|export|import|approve|pay|purchase|subscribe|logout|sign out|sign in|log in|password|settings|setup|admin|save|submit)\b',text,re.I):
+    if re.search(r'\b(delete|remove|merge|send|post|publish|export|import|approve|confirm|validate|issue|charge|pay|purchase|subscribe|logout|sign out|sign in|log in|password|settings|setup|admin|save|submit)\b',text,re.I):
         raise ValueError('Navigation would cross a write or account boundary')
     if not create and re.search(r'\b(create|new|add)\b',text,re.I):raise ValueError('Creation is not authorized during this navigation step')
     if c.get('href'):

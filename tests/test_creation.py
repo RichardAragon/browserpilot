@@ -113,3 +113,38 @@ def test_lost_creation_form_never_reopens_new_or_replays_fields(tmp_path,monkeyp
     assert s.run(run['id'])['status']=='uncertain'
     assert s.run(run['id'])['result']['send_intent'] is True
     assert j.load(run['id'])['submission_pending'] is True
+
+
+def test_discovery_error_can_resume_same_live_untouched_form(tmp_path,monkeypatch):
+    import threading
+    import pilot.creation
+    s=Store(tmp_path);c=s.add_connection({'platform':'website','base_url':'https://crm.test'})
+    run=s.create_run({'connection_id':c['id'],'kind':'browser_create','name':'Live Draft Trial','fields':{}})
+    j=Journal(tmp_path/'operations.sqlite');opened=[]
+    class StubPage:
+        url='https://crm.test/new';closed=False
+        def goto(self,*a,**k):pass
+        def is_closed(self):return self.closed
+        def close(self):self.closed=True
+    class Context:
+        def new_page(self):return StubPage()
+    class Model:
+        def __init__(self,*a):self.calls=[]
+    monkeypatch.setattr(pilot.creation,'StructuredModel',Model)
+    b=WebsiteBrowser(s)
+    monkeypatch.setattr(b,'session',lambda ident:(Context(),StubPage()))
+    monkeypatch.setattr(b,'ui',lambda page,*a:page)
+    monkeypatch.setattr(b,'find_record',lambda *a:{'found':False,'url':'https://crm.test','absence_quote':'No records found'})
+    def discovery(ui,p,client,run,stop,journal):
+        if not opened:
+            opened.append(ui);journal.record(run['id'],'open_form_intent',phase='commit_intent');journal.record(run['id'],'opening_form',phase='form_open')
+            raise ValueError('Dropdown needs a fresh observation')
+        assert ui is opened[0] and not ui.is_closed()
+        return {'fields':{},'url':ui.url},None
+    monkeypatch.setattr(b,'creation_form',discovery)
+    b.create(run,threading.Event())
+    assert s.run(run['id'])['status']=='blocked'
+    assert j.load(run['id'])['phase']=='form_open' and j.load(run['id'])['submission_pending']
+    b.create(s.run(run['id']),threading.Event())
+    assert s.run(run['id'])['status']=='awaiting_approval'
+    assert len([e for e in j.events(run['id']) if e['event']=='open_form_intent'])==1
