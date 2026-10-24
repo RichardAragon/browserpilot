@@ -1,7 +1,7 @@
 {
   "version": "1.2.0-preview",
   "date": "2026-10-24",
-  "automated_tests": 133,
+  "automated_tests": 137,
   "live_model": "gpt-6.1-sol",
   "platform": "local Dolibarr",
   "mode": "generic browser controller; platform-specific adapters disabled",

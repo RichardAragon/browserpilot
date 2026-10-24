@@ -70,7 +70,7 @@ The generated app is under `release/BrowserPilot/`. For isolated manual testing,
 
 ## Validation and data
 
-Version 1.2 passed **133 automated tests** and a real-model Dolibarr Sales Order test with platform-specific adapters disabled. The controller created one draft, completed its customer reference, and verified its identity, customer and Draft status in a fresh browser page. See [the 1.2 report](REPORT_v1.2.html) and [structured results](VALIDATION_v1.2.json). Draft-first creation currently covers a name/reference and delegated existing relationships; it does not add line items or validate/send/pay a document. References are not assumed to be unique document keys.
+Version 1.2 passed **137 automated tests** and a real-model Dolibarr Sales Order test with platform-specific adapters disabled. The controller created one draft, completed its customer reference, and verified its identity, customer and Draft status in a fresh browser page. See [the 1.2 report](REPORT_v1.2.html) and [structured results](VALIDATION_v1.2.json). Draft-first creation currently covers a name/reference and delegated existing relationships; it does not add line items or validate/send/pay a document. References are not assumed to be unique document keys.
 
 The 1.1 validation run passed **103 automated tests**. Live tests covered generic creation on both CRMs, duplicate prevention, restart recovery, real-model note generation and packaged-app execution. Two early Odoo form-discovery attempts remained uncertain; recovery preserved their intent fences. These are synthetic local examples, not a performance benchmark.
 

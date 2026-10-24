@@ -158,6 +158,10 @@ class Store:
                 # Canonicalize that repetition instead of mapping two fields to one node.
                 identity_label=re.compile(r'^(?:(?:(?:third[ -]?party|company|contact|account|record|organization)\s+)?name|title|(?:external|customer)\s+ref(?:erence)?\.?)$',re.I)
                 payload['desired']={'Name':name,**{k:v for k,v in fields.items() if not (identity_label.fullmatch(k.strip()) and v==name)}}
+                # Draft is a verified outcome, not necessarily an editable input.
+                if payload['draft_only']:
+                    payload['desired']={k:v for k,v in payload['desired'].items() if not (k.strip().casefold() in ('status','state','document status','order status') and v.strip().casefold()=='draft')}
+
             title=('Create ' if kind=='browser_create' else 'Update ')+name
         elif p in ('dolibarr','odoo'):
             if kind not in ('create','update'):raise ValueError('Choose create or update')

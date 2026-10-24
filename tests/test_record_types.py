@@ -121,3 +121,15 @@ def test_preparation_choices_require_delegation_observation_and_once_only_intent
         assert len(actions)==1 and j.load(run['id'])['phase']=='form_open'
         assert j.load(run['id'])['preparation_choices']['Customer']['after']==option
     else:assert not actions
+
+
+@pytest.mark.parametrize('kind,record_type,fields,expected',[
+    ('browser_create','Sales Order',{'Status':'Draft'},{'Name':'Trial'}),
+    ('browser_create','Sales Order',{'Status':'Confirmed'},{'Name':'Trial','Status':'Confirmed'}),
+    ('browser_update','Sales Order',{'Status':'Draft'},{'Status':'Draft'}),
+    ('browser_create','Contact',{'Status':'Draft'},{'Name':'Trial','Status':'Draft'}),
+])
+def test_draft_creation_status_is_an_outcome_not_a_missing_form_input(tmp_path,kind,record_type,fields,expected):
+    s=Store(tmp_path);c=s.add_connection({'platform':'website','base_url':'http://example.test'})
+    r=s.create_run({'connection_id':c['id'],'kind':kind,'name':'Trial','record_type':record_type,'fields':fields})
+    assert r['payload']['desired']==expected
