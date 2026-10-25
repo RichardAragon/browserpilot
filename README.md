@@ -2,11 +2,11 @@
 
 A local Windows app that uses an LLM to discover and operate CRM interfaces through the browser. Connect a website, describe a task, review the proposed fields, and inspect the resulting evidence.
 
-**Version 1.3 is a preview.** Generic creation and duplicate prevention have been tested on local Dolibarr and Odoo instances with platform-specific adapters disabled. Salesforce and HubSpot URLs are supported as connection inputs, but their live workflows have not been validated. API-level reliability and speed have not been established.
+**Version 1.4 is a preview.** Generic creation and duplicate prevention have been tested on local Dolibarr and Odoo instances with platform-specific adapters disabled. Salesforce and HubSpot URLs are supported as connection inputs, but their live workflows have not been validated. API-level reliability and speed have not been established.
 
 ## Run the Windows app
 
-1. Download `BrowserPilot_Windows_v1.3.zip` from [Releases](https://github.com/RichardAragon/browserpilot/releases).
+1. Download `BrowserPilot_Windows_v1.4.zip` from [Releases](https://github.com/RichardAragon/browserpilot/releases).
 2. Extract the archive. Open `BrowserPilot.exe` in its `BrowserPilot` folder, keeping `_internal` beside it.
 3. In **Settings**, select your existing Codex sign-in or provide an OpenAI API key and a model that supports structured outputs.
 4. Add a website and let the assistant inspect it. Complete sign-in in the separate browser when prompted. Microsoft Edge is required for interactive sessions.
@@ -69,7 +69,13 @@ The generated app is under `release/BrowserPilot/`. For isolated manual testing,
 | `tests/` | Controller, recovery, memory, local server and model transport tests |
 | `build.ps1` | Windows packaging |
 
+## Follow-up record creation
+
+Ask the assistant to create a new record with the same Account (or another field) as a named existing record. It proposes a source reference, reads the exact source through the browser, shows the resolved value for approval, then rechecks it before entering the new record. Verified task history also lets the assistant resolve “the last Opportunity” when unambiguous. Setup inspection is no longer used as a substitute for reading a specific record. References currently operate within one connection.
+
 ## Validation and data
+
+Version 1.4 passed **175 automated tests** and created **Richard Test** in local Odoo, linked to the Account read from **YouTube Test Opportunity**. One final creation was submitted and independently verified. See [the 1.4 report](REPORT_v1.4.html) and [structured results](VALIDATION_v1.4.json).
 
 Version 1.3 passed **158 automated tests** and completed the original Odoo Opportunity task using the general browser controller. Filter removal, custom dropdowns and partial-form recovery were tested, with one form opening and one final creation. See [the 1.3 report](REPORT_v1.3.html) and [structured results](VALIDATION_v1.3.json).
 

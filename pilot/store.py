@@ -151,6 +151,9 @@ class Store:
             record_type=str(data.get('record_type','')).strip()
             choices=data.get('choose_existing',[])
             if len(record_type)>100 or not isinstance(choices,list) or len(choices)>4 or any(not isinstance(x,str) or not x.strip() or len(x)>100 for x in choices):raise ValueError('Specify a record type and up to four delegated existing-record choices')
+            from .references import validate_references
+            refs=validate_references(data.get('references',[]),name,fields,choices,kind)
+            if refs:payload['references']=refs
             payload.update(record_type=record_type,choose_existing=choices,draft_only=bool(re.search(r'order|invoice|quot|proposal|contract',record_type,re.I)))
             if kind=='browser_create':
                 if any(k.casefold()=='name' and v!=name for k,v in fields.items()):raise ValueError('Name must match the record identity')
@@ -197,6 +200,23 @@ class Store:
     def runs(self):
         with self.db() as db:ids=[r[0] for r in db.execute('SELECT id FROM runs ORDER BY created DESC LIMIT 100')]
         return [self.run(i) for i in ids]
+    def task_context(self,connection_id=None):
+        context=[]
+        for run in self.runs():
+            if run['status']!='confirmed' or (connection_id and run['connection_id']!=connection_id):continue
+            p,r=run['payload'],run['result']
+            if p['kind'] not in ('browser_create','browser_update','create','update'):continue
+            fields=r.get('prepared',{}).get('fields',{})
+            verified=r.get('proof',{}).get('state',{})
+            if not verified:continue
+            context.append({'run_id':run['id'],'connection_id':run['connection_id'],'name':p.get('name',''),
+                'record_type':p.get('record_type',''),'operation':p['kind'],
+                'verified_fields':[{ 'field':k,'value':v,'website_label':fields.get(k,{}).get('label',k),
+                  'requested_field':fields.get(k,{}).get('task_field',k)} for k,v in verified.items()],
+                'delegated_fields':p.get('choose_existing',[]),'verified_at':run['updated']})
+            if len(context)>=12:break
+        return context
+
     def update_run(self,ident,status,reason='',result=None,attempt=None):
         with self.db() as db:
             db.execute('UPDATE runs SET status=?,reason=?,updated=? WHERE id=?',(status,reason,time.time(),ident))

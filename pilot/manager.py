@@ -100,8 +100,8 @@ class Manager:
                     # owning thread. Keep live forms and all intent journals.
                     import importlib
                     from uiagent import control_catalog
-                    from . import setup,drafts,creation,website as controller
-                    for module in (control_catalog,setup,drafts,creation,controller):importlib.reload(module)
+                    from . import setup,references,drafts,creation,website as controller
+                    for module in (control_catalog,setup,references,drafts,creation,controller):importlib.reload(module)
                     website.__class__=controller.WebsiteBrowser
                 if proc:
                     proc.wait();stream.close()

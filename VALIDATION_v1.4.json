@@ -1,0 +1,56 @@
+{
+  "version": "1.4.0-preview",
+  "date": "2026-10-24",
+  "automated_tests": 175,
+  "live_platform": "local Odoo",
+  "live_model": "gpt-6.1-sol",
+  "adapter_used": false,
+  "record_type": "Opportunity",
+  "status": "confirmed",
+  "source_record": "YouTube Test Opportunity",
+  "target_record": "Richard Test",
+  "proof": {
+    "Name": "Richard Test",
+    "Account": "Synthetic financial_graph_random_development_001:42"
+  },
+  "source_field": "Account",
+  "observed_source_field": "Contact?",
+  "form_openings": 1,
+  "submission_intents": 1,
+  "create_actions": 1,
+  "final_creation_attempt_seconds": 96.234,
+  "scope": "Iterative real-model test with two read-only lookup failures fixed before final submission. Final-attempt timing excludes earlier development and approval time; it is not end-to-end benchmark latency.",
+  "changes": [
+    "Assistant receives verified task history and the explicit latest request",
+    "Platform-neutral source-record field references in task contracts",
+    "Scoped visible-record evidence rather than an unlabeled card or search chip",
+    "Support for detail views without standard form/main landmarks",
+    "Reuse observed detail URLs with exact visible identity checks for source rechecks",
+    "Read source again before input; changed sources rebuild the review on the same blank form without inheriting approval",
+    "Select explicit input-combobox relationships as existing options instead of typing plain text",
+    "Approval covers source identity, field and resolved value",
+    "Interrupted final submissions verify the approved snapshot without re-resolving or replaying creation"
+  ],
+  "limits": [
+    "The new reference workflow was live-tested on Odoo; it has not yet been live-tested on Salesforce, HubSpot or Dolibarr.",
+    "Uses visible English UI and accessible controls; some search-and-select pickers or unusual detail layouts can still require refinement.",
+    "The source and target cannot be locked atomically through browser checks; external changes during Save remain possible.",
+    "Record dependencies currently support general record creation in the same connection, not cross-platform joins or dependency chains."
+  ],
+  "follow_up_pronoun_test": {
+    "requested_source": "last successfully created Opportunity",
+    "resolved_source": "Richard Test",
+    "new_target": "BrowserPilot Follow-up Preview",
+    "proposal_only": true
+  },
+  "packaged_restart_check": {
+    "version": "1.4.0-preview",
+    "status": "confirmed",
+    "seconds": 43.203,
+    "creation_actions_after_recovery": 1,
+    "fresh_proof": {
+      "Name": "Richard Test",
+      "Account": "Synthetic financial_graph_random_development_001:42"
+    }
+  }
+}

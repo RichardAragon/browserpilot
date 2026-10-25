@@ -90,7 +90,7 @@ class WebsiteBrowser(GenericSetup,GenericCreation,SocialBrowser):
             if FORBIDDEN.search(control['label']+' '+control['name']):raise ValueError('This field is outside the supported task scope')
             if control['tag']=='select' and p['desired'][field] not in control['options']:raise ValueError('Requested option is not visible')
             mapping[field]={'signature':fingerprint(control),'before':value_of(control),'after':p['desired'][field],'label':control['label'] or control['name']}
-            if control.get('role')=='combobox' and control['tag']!='input':
+            if control.get('role')=='combobox' and control['tag']!='select':
                 if not creating:raise ValueError('This update needs a native text/select field; custom dropdown updates are not yet available')
                 if p['desired'][field] not in control.get('options',[]):raise ValueError('Open the dropdown to observe the requested existing option before review')
                 mapping[field]['custom_select']=True
@@ -102,7 +102,7 @@ class WebsiteBrowser(GenericSetup,GenericCreation,SocialBrowser):
             if FORBIDDEN.search(control['label']+' '+control['name']) or re.search(r'price|amount|credit|payment|permission|role|bank|tax|subscription',control['label']+' '+control['name'],re.I):raise ValueError('This default requires explicit user input')
             if len(action.get('defaults',[]))>4:raise ValueError('Too many suggested defaults')
             key='Suggested: '+(control['label'] or control['name'])
-            mapping[key]={'signature':fingerprint(control),'before':value_of(control),'after':default['value'],'label':control['label'] or control['name'],'reason':default['reason']}
+            mapping[key]={'signature':fingerprint(control),'before':value_of(control),'after':default['value'],'label':control['label'] or control['name'],'reason':default['reason'],'task_field':default.get('field') or key}
             if control.get('role')=='combobox' and control['tag']!='select':mapping[key]['custom_select']=True
         if len({json.dumps(v['signature'],sort_keys=True) for v in mapping.values()})!=len(mapping):raise ValueError('Requested fields map to the same control')
         save=controls.get(action['save_id'])
